@@ -66,35 +66,6 @@ public:
 		}
 	};
 
-	void	reserve(size_type n)
-	{
-		size_type	old_len = _end_capacity - _start;
-
-		if (old_len < n)
-		{
-			try
-			{
-				pointer old_start = _start;
-				size_type new_len = old_len * 2 > n ? old_len * 2 : n;
-				_start = _alloc.allocate(new_len); //maybe need to know if new_len > max_size
-				_end = _start + old_len;
-				_end_capacity = _start + new_len;
-				for (size_type i = 0; i < old_len; i++)
-				{
-					_alloc.construct(_start + i, *(old_start + i));
-					_alloc.destroy(old_start + i);
-				}
-				_alloc.deallocate(old_start, old_len);
-			}
-			catch (std::exception e)
-			{
-				//надо будет исправить если что
-				this->~Vector();
-				throw e;
-			}
-		}
-	}
-
 	//need to make InputIterator
 	template<class InputIterator>
 	Vector(InputIterator first, InputIterator last,
@@ -135,11 +106,120 @@ public:
 		(void) x;
 	};
 
+	void	reserve(size_type n)
+	{
+		size_type	old_len = _end_capacity - _start;
+
+		if (old_len < n)
+		{
+			try
+			{
+				pointer old_start = _start;
+				size_type new_len = old_len * 2 > n ? old_len * 2 : n;
+				_start = _alloc.allocate(new_len); //maybe need to know if new_len > max_size
+				_end = _start + old_len;
+				_end_capacity = _start + new_len;
+				for (size_type i = 0; i < old_len; i++)
+				{
+					_alloc.construct(_start + i, *(old_start + i));
+					_alloc.destroy(old_start + i);
+				}
+				_alloc.deallocate(old_start, old_len);
+			}
+			catch (std::exception e)
+			{
+				//надо будет исправить если что
+				this->~Vector();
+				throw e;
+			}
+		}
+	}
+
+	void	my_copy (pointer begin, pointer end, pointer start_position)
+	{
+		while (begin != end)
+		{
+			_alloc.construct(start_position, *begin);
+			_alloc.destroy(begin);
+			begin++;
+			start_position++;
+		}
+	}
+
 	iterator insert (iterator position, const value_type& val)
 	{
-		size_type index = ft::distance(begin(), position);
-		reserve(size() + 1);
+		size_type	index = ft::distance(begin(), position);
 
+		insert(position, 1, val);
+		return (_start + index);
+	}
+
+	void insert (iterator position, size_type n, const value_type& val)
+	{
+		size_type	index = ft::distance(begin(), position);
+		size_type	old_len = _end_capacity - _start;
+		size_type	new_len = _end - _start + n;
+
+		if (old_len < new_len)
+		{
+			try
+			{
+				pointer old_start = _start;
+				new_len = old_len * 2 > new_len ? old_len * 2 : new_len;
+				_start = _alloc.allocate(new_len); //maybe need to know if new_len > max_size
+				_end_capacity = _start + new_len;
+				my_copy(old_start, old_start + index, _start);
+				for (size_type i = 0; i < n; i++)
+				{
+					_alloc.construct(_start + index, val);
+					index++;
+				}
+				my_copy(old_start + index - n, old_start + old_len, _start + index);
+				_end = _start + old_len + n;
+			}
+			catch (std::exception e)
+			{
+				//надо будет исправить если что
+				this->~Vector();
+				throw e;
+			}
+		}
+	}
+
+	template <class InputIterator>
+	typename ft::enable_if<!ft::is_integral<InputIterator>::stat, void>::type
+	insert (iterator position, InputIterator first, InputIterator last)
+	{
+		size_type	n = ft::distance(first, last);
+		size_type	index = ft::distance(begin(), position);
+		size_type	old_len = _end_capacity - _start;
+		size_type	new_len = _end - _start + n;
+
+		if (old_len < new_len)
+		{
+			try
+			{
+				pointer old_start = _start;
+				new_len = old_len * 2 > new_len ? old_len * 2 : new_len;
+				_start = _alloc.allocate(new_len); //maybe need to know if new_len > max_size
+				_end_capacity = _start + new_len;
+				my_copy(old_start, old_start + index, _start);
+				while (first != last)
+				{
+					_alloc.construct(_start + index, first);
+					first++;
+					index++;
+				}
+				my_copy(old_start + index - n, old_start + old_len, _start + index);
+				_end = _start + old_len + n;
+			}
+			catch (std::exception e)
+			{
+				//надо будет исправить если что
+				this->~Vector();
+				throw e;
+			}
+		}
 	}
 
 	size_type size() const
