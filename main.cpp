@@ -16,11 +16,11 @@ void ft_print_vector(T iter_begin, T iter_end)
 int main(void)
 {
 
-	std::vector<int> origin(15, 2);
+	std::vector<int> origin(5, 2);
 	std::vector<int>::iterator orig_iter = origin.begin();
 
 	for (std::vector<int>::iterator buff = orig_iter; buff != origin.end(); buff++)
-		*buff = ft::distance(origin.begin(), buff) * 4;
+		*buff = 141414;//ft::distance(origin.begin(), buff);
 //
 //	orig_iter += 5;
 //	origin.insert(orig_iter, 123131);
@@ -45,13 +45,28 @@ int main(void)
 
 
 	//ft::Iterator<int> new_iter = my.insert(my_iter, 555555);
-	//my.insert(my_iter, 5, 0);
-	my.insert(my_iter, origin.begin(), origin.end());
+
+	my.insert(my_iter, 2, -1111);
+
+	ft::Iterator<int>	my_iter2 = my.begin();
+	my_iter2++;
+	my_iter2++;
+	my_iter2++;
+	//ft_print_vector(my.begin(), my.end());
+
+	std::cout << "size1 :" << my.size() << std::endl;
+	my.insert(my_iter2, origin.begin(), origin.end());
+
 
 	//std::cout << "all" << std::endl;
 
+//	my_iter = my.insert(my_iter, 5, 10000);
+	//my.insert(my_iter, 5, 10000);
+
 	ft_print_vector(my.begin(), my.end());
-	//std::cout << *new_iter << std::endl;
+
+	std::cout << "size2 :" << my.size() << std::endl;
+	std::cout << "capacity: " << my.capacity() << std::endl;
 
 
 	return (0);
