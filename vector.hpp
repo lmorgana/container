@@ -4,11 +4,16 @@
 #include <memory>
 #include "iterators.hpp"
 #include "random_access_iterator.hpp"
+#include "reverse_iterator.hpp"
+
+#include "stack"
 
 #include "enable_if.hpp"
 
+namespace ft
+{
 template <class T, class Alloc = std::allocator<T> >
-class Vector
+class vector
 {
 public:
 	typedef	T															value_type;
@@ -17,9 +22,9 @@ public:
 	typedef	typename allocator_type::const_reference					const_reference;
 	typedef	typename allocator_type::pointer							pointer;
 	typedef typename allocator_type::const_pointer						const_pointer;
-	typedef typename ft::Iterator<value_type>							iterator;
+	typedef	vector_iterator<value_type>									iterator;
 //	typedef	typename ft::random_access_iterator<const value_type>		const_iterator;
-//	typedef typename ft::reverse_iterator<iterator>						reverse_iterator;
+	typedef typename ft::reverse_iterator<value_type>					reverse_iterator;
 //	typedef typename ft::reverse_iterator<const_iterator>				const_reverse_iterator;
 	typedef	typename ft::iterator_traits<iterator>::difference_type		difference_type;
 	typedef typename allocator_type::size_type							size_type;
@@ -30,8 +35,9 @@ private:
 	pointer			_end;
 	pointer			_end_capacity;
 
+
 public:
-	explicit Vector(const allocator_type& alloc = allocator_type()) :
+	explicit vector(const allocator_type& alloc = allocator_type()) :
 		_alloc(alloc),
 		_start(nullptr),
 		_end(nullptr),
@@ -41,7 +47,7 @@ public:
 	//need to catch exception when constructor fail;
 	//because can be leaks=
 
-	explicit Vector(size_type n, const value_type& val = value_type(),
+	explicit vector(size_type n, const value_type& val = value_type(),
 					const allocator_type& alloc = allocator_type()) :
 		_alloc(alloc)
 	{
@@ -68,7 +74,7 @@ public:
 
 	//need to make InputIterator
 	template<class InputIterator>
-	Vector(InputIterator first, InputIterator last,
+	vector(InputIterator first, InputIterator last,
 			const allocator_type& alloc = allocator_type(),
 			typename ft::enable_if<!ft::is_integral<InputIterator>::stat, void>::type* = 0) :
 		_alloc(alloc)
@@ -84,12 +90,12 @@ public:
 	};
 
 	//need to make insert or other function to add range of elements
-//	Vector(const Vector& x)
-//	{
-//
-//	}
+	vector(const vector& x)
+	{
+		insert(begin(), x.begin(), x.end());
+	}
 
-	~Vector()
+	~vector()
 	{
 		pointer	buff = _start;
 
@@ -98,12 +104,13 @@ public:
 			_alloc.destroy(buff);
 			buff++;
 		}
-		_alloc.deallocate(_start, this->size());
+		_alloc.deallocate(_start, this->size()); // maybe has leaks
 	};
 
-	Vector& operator= (const Vector& x)
+	vector& operator= (const vector& x) //maybe need to be rewrite
 	{
-		(void) x;
+		clear();
+		insert(begin(), x.begin(), x.end());
 	};
 
 	// my own methods
@@ -160,6 +167,7 @@ public:
 					index++;
 				}
 				my_copy(old_start + index - n, old_start + old_len, _start + index);
+				_alloc.deallocate(old_start, old_len);
 				_end = _start + old_len + n;
 			}
 			catch (std::exception e)
@@ -215,6 +223,7 @@ public:
 					index++;
 				}
 				my_copy(old_start + index - n, old_start + old_len, _start + index);
+				_alloc.deallocate(old_start, old_len);
 				_end = _start + old_len + n;
 			}
 			catch (std::exception e)
@@ -259,12 +268,19 @@ public:
 
 	void resize(size_type n, value_type val = value_type())
 	{
-		size_type	old_len = _end_capacity - _start;
+		size_type	size = this->size();
 
-		if (old_len <= n)
+		if (n < size)
 		{
-			while ()
+			while (size != n)
+			{
+				_alloc.destroy(_start + size);
+				size--;
+				_end--;
+			}
 		}
+		if (n > size)
+			insert(end(), n - size, val);
 	};
 
 	size_type capacity() const
@@ -306,15 +322,8 @@ public:
 		}
 	}
 
-	reference operator[](size_type n)
-	{
-		return (*(_start + n));
-	};
-
-	const_reference operator[](size_type n) const
-	{
-		return (*(_start + n));
-	};
+	reference operator[](size_type n) {return (*(_start + n));};
+	const_reference operator[](size_type n) const {return (*(_start + n));};
 
 	reference at(size_type n)
 	{
@@ -324,35 +333,87 @@ public:
 			throw std::exception(); //make new exception;
 	};
 
+	reference front() {return (*_start);};
+	const_reference front() const {return (*_start);};
+
+	reference back() {return (*_end);};
+	const_reference back() const {return (*_end);};
+
+	template <class InputIterator>
+	void assign (InputIterator first, InputIterator last) {insert(begin(), first, last);};
+	void assign (size_type n, const value_type& val) { insert(begin(), n, val);};
+
+	void push_back (const value_type& val) { insert(end(), 1, val);};
+	void pop_back() {resize(size() - 1);};
+
+	void for_erase(iterator position, size_type n) //нужно спрятать
+	{
+		 pointer	point = _start + ft::distance(begin(), position);
+		 for (size_type i = 0; i < n; i++)
+			 _alloc.destroy(point + i);
+		my_copy(_start + n, _end, point);
+		_end -= n;
+	}
+
+	iterator erase (iterator position)
+	{
+		iterator	out = position++;
+		for_erase(position, 1);
+		return (out);
+	};
+
+	iterator erase (iterator first, iterator last)
+	{
+		iterator	out = first++;
+		size_type	len = ft::distance(first, last);
+		for_erase(first, len);
+		return (out); // нужно поменять
+	};
+
+	void swap(vector& x)
+	{
+		if (this != &x)
+		{
+			std::swap(_start, x._start);
+			std::swap(_end, x._end);
+			std::swap(_end_capacity, x._end_capacity);
+		}
+	}
+
+	void clear()
+	{
+		for (size_type i = 0; i < size(); i++)
+		{
+			_alloc.construct(_start + i, *(_end + i));
+			_alloc.destroy(_end + i);
+		}
+		_end = _start;
+	}
+
+	allocator_type get_allocator() const
+	{
+		return (_alloc);
+	}
+
 	iterator begin()
 	{
-		return (ft::Iterator<T>(_start));
+		return (iterator(_start));
 	}
 
 	iterator end()
 	{
-		return (ft::Iterator<T>(_end));
+		return (iterator(_end));
 	}
-//	reference front()
-//	{
-//		return (_start);
-//	};
-//
-//	const_reference front()
-//	{
-//		return (_start);
-//	};
-//
-//	reference back()
-//	{
-//		return (_end);
-//	};
-//
-//	const_reference back()
-//	{
-//		return (_end);
-//	};
 
+//	reverse_iterator rbegin()
+//	{
+//		return (reverse_iterator(_end));
+//	}
+//
+//	reverse_iterator rend()
+//	{
+//		return (reverse_iterator(_start));
+//	}
 };
-
+}
 #endif
