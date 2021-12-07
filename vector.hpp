@@ -3,15 +3,15 @@
 
 #include <memory>
 #include "iterators.hpp"
-#include "random_access_iterator.hpp"
 #include "reverse_iterator.hpp"
-
-#include "stack"
 
 #include "enable_if.hpp"
 
 namespace ft
 {
+
+
+
 template <class T, class Alloc = std::allocator<T> >
 class vector
 {
@@ -22,10 +22,10 @@ public:
 	typedef	typename allocator_type::const_reference					const_reference;
 	typedef	typename allocator_type::pointer							pointer;
 	typedef typename allocator_type::const_pointer						const_pointer;
-	typedef	vector_iterator<value_type>									iterator;
-//	typedef	typename ft::random_access_iterator<const value_type>		const_iterator;
-	typedef typename ft::reverse_iterator<value_type>					reverse_iterator;
-//	typedef typename ft::reverse_iterator<const_iterator>				const_reverse_iterator;
+	typedef vector_iterator<value_type>									iterator;
+	typedef const_vector_iterator<value_type>							const_iterator;
+	typedef typename ft::reverse_iterator<iterator>						reverse_iterator;
+	typedef typename ft::reverse_iterator<const_iterator>				const_reverse_iterator;
 	typedef	typename ft::iterator_traits<iterator>::difference_type		difference_type;
 	typedef typename allocator_type::size_type							size_type;
 
@@ -34,7 +34,6 @@ private:
 	pointer			_start;
 	pointer			_end;
 	pointer			_end_capacity;
-
 
 public:
 	explicit vector(const allocator_type& alloc = allocator_type()) :
@@ -92,7 +91,29 @@ public:
 	//need to make insert or other function to add range of elements
 	vector(const vector& x)
 	{
-		insert(begin(), x.begin(), x.end());
+		iterator	first = x.begin();
+		iterator	last = x.end();
+		size_type	new_len = x.size();
+		int			index = 0;
+
+		try
+		{
+			_start = _alloc.allocate(new_len); //maybe need to know if new_len > max_size
+			_end_capacity = _start + new_len;
+			while (first != last)
+			{
+				_alloc.construct(_start + index, *first);
+				first++;
+				index++;
+			}
+			_end = _start + index;
+		}
+		catch (std::exception e)
+		{
+			//надо будет исправить если что
+			this->~vector();
+			throw e;
+		}
 	}
 
 	~vector()
@@ -109,8 +130,40 @@ public:
 
 	vector& operator= (const vector& x) //maybe need to be rewrite
 	{
-		clear();
-		insert(begin(), x.begin(), x.end());
+		size_type	n = x.size();
+		size_type	old_len = _end_capacity - _start;
+		size_type	new_len = _end - _start + n;
+		iterator	it_begin = x.begin();
+		iterator	it_end= x.end();
+		int 		index = 0;
+
+
+		if (old_len < new_len)
+		{
+			clear();
+			_alloc.deallocate(_start, old_len);
+			new_len = old_len * 2 > new_len ? old_len * 2 : new_len;
+			_start = _alloc.allocate(new_len); //maybe need to know if new_len > max_size
+			_end_capacity = _start + new_len;
+			while (it_begin != it_end)
+			{
+				_alloc.construct(_start + index, *it_begin);
+				index++;
+				it_begin++;
+			}
+			_end = _start + index;
+		}
+		else
+		{
+			while (it_begin != it_end)
+			{
+				*(_start + index) = *it_begin;
+				index++;
+				it_begin++;
+			}
+			_end = _start + index;
+		}
+		return (*this);
 	};
 
 	// my own methods
@@ -173,7 +226,7 @@ public:
 			catch (std::exception e)
 			{
 				//надо будет исправить если что
-				this->~Vector();
+				this->~vector();
 				throw e;
 			}
 		}
@@ -193,7 +246,7 @@ public:
 			catch (std::exception e)
 			{
 				//надо будет исправить если что
-				this->~Vector();
+				this->~vector();
 				throw e;
 			}
 		}
@@ -207,6 +260,7 @@ public:
 		size_type	index = ft::distance(begin(), position);
 		size_type	old_len = _end_capacity - _start;
 		size_type	new_len = _end - _start + n;
+
 		if (old_len < new_len)
 		{
 			try
@@ -229,7 +283,7 @@ public:
 			catch (std::exception e)
 			{
 				//надо будет исправить если что
-				this->~Vector();
+				this->~vector();
 				throw e;
 			}
 		}
@@ -250,7 +304,7 @@ public:
 			catch (std::exception e)
 			{
 				//надо будет исправить если что
-				this->~Vector();
+				this->~vector();
 				throw e;
 			}
 		}
@@ -316,7 +370,7 @@ public:
 			catch (std::exception e)
 			{
 				//надо будет исправить если что
-				this->~Vector();
+				this->~vector();
 				throw e;
 			}
 		}
@@ -395,25 +449,45 @@ public:
 		return (_alloc);
 	}
 
-	iterator begin()
+//	const_iterator begin() const
+//	{
+//		return (const_iterator(_start));
+//	}
+
+	iterator begin() const
 	{
 		return (iterator(_start));
 	}
 
-	iterator end()
+//	const_iterator end() const
+//	{
+//		return (const_iterator(_end));
+//	}
+
+	iterator end() const
 	{
 		return (iterator(_end));
 	}
 
-//	reverse_iterator rbegin()
+//	const_reverse_iterator rbegin() const
 //	{
-//		return (reverse_iterator(_end));
+//		return (const_reverse_iterator(end()));
 //	}
-//
-//	reverse_iterator rend()
+
+	reverse_iterator rbegin() const
+	{
+		return (reverse_iterator(end()));
+	}
+
+//	const_reverse_iterator rend() const
 //	{
-//		return (reverse_iterator(_start));
+//		return (const_reverse_iterator(begin()));
 //	}
+
+	reverse_iterator rend() const
+	{
+		return (reverse_iterator(begin()));
+	}
 };
 }
 #endif

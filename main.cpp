@@ -17,25 +17,17 @@ void ft_print_vector(T iter_begin, T iter_end)
 
 int main(void)
 {
-	std::vector<int> origin (5, 2);
-	std::vector<int>::reverse_iterator riter = origin.rbegin();
-	std::vector<int>::reverse_iterator riter_end = origin.rend();
+	ft::vector<int> my2(6, 2);
+//	std::vector<int> orig(6, 2);
 
-	std::vector<int>::iterator iter = origin.begin();
-	std::vector<int>::iterator iter_end = origin.end();
+	ft::vector<int>::iterator rev = my2.begin();
 
+//const ft::vector<int> my;
 
+//	std::vector<int>::const_iterator iter_orig = orig.begin();
 
-//	char *ptr;
-//	int *ptr1;
-//
-//	if (ptr > ptr1)
-
-	std::cout << (iter > iter_end) << std::endl;
-	std::cout << (iter_end > iter) << std::endl;
-	std::cout << (riter > riter_end) << std::endl;
-
-
+//	(void) iter_orig;
+	(void) rev;
 }
 
 //int	main(void)
