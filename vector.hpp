@@ -4,6 +4,7 @@
 #include <memory>
 #include "iterators.hpp"
 #include "reverse_iterator.hpp"
+#include "utils.hpp"
 
 #include "enable_if.hpp"
 
@@ -196,57 +197,52 @@ public:
 		size_type	index = ft::distance(begin(), position);
 
 		insert(position, 1, val);
+
 		return (_start + index);
 	}
 
 	void insert (iterator position, size_type n, const value_type& val)
 	{
 		size_type	index = ft::distance(begin(), position);
-		size_type	old_len = _end_capacity - _start;
-		size_type	new_len = _end - _start + n;
+		size_type	old_cap = _end_capacity - _start;
+		size_type	old_size = _end - _start;
+		size_type	new_len = old_size + n;
 
-		if (old_len < new_len)
+		if (old_cap < new_len)
 		{
 			try
 			{
 				pointer old_start = _start;
-				new_len = old_len * 2 > new_len ? old_len * 2 : new_len;
+				new_len = old_cap * 2 > new_len ? old_cap * 2 : new_len;
 				_start = _alloc.allocate(new_len); //maybe need to know if new_len > max_size
 				_end_capacity = _start + new_len;
 				my_copy(old_start, old_start + index, _start);
-				for (size_type i = 0; i < n; i++)
-				{
+				for (size_type i = 0; i < n; i++, index++)
 					_alloc.construct(_start + index, val);
-					index++;
-				}
-				my_copy(old_start + index - n, old_start + old_len, _start + index);
-				_alloc.deallocate(old_start, old_len);
-				_end = _start + old_len + n;
+				my_copy(old_start + index - n, old_start + old_size, _start + index);
+				_alloc.deallocate(old_start, old_cap);
+				_end = _start + old_size + n;
 			}
-			catch (std::exception e)
+			catch (...)
 			{
 				//надо будет исправить если что
 				this->~vector();
-				throw e;
+				throw std::exception();
 			}
 		}
 		else
 		{
 			try
 			{
-				old_len = _end - _start;
 				my_copyR(_start + index, _end, _start + index + n);
-				for (size_type i = 0; i < n; i++)
-				{
+				for (size_type i = 0; i < n; i++, index++)
 					_alloc.construct(_start + index, val);
-					index++;
-				}
-				_end = _start + old_len + n;
+				_end = _start + old_size + n;
 			}
 			catch (std::exception e)
 			{
 				//надо будет исправить если что
-				this->~vector();
+				//this->~vector();
 				throw e;
 			}
 		}
@@ -258,15 +254,16 @@ public:
 	{
 		size_type	n = ft::distance(first, last);
 		size_type	index = ft::distance(begin(), position);
-		size_type	old_len = _end_capacity - _start;
-		size_type	new_len = _end - _start + n;
+		size_type	old_cap = _end_capacity - _start;
+		size_type	old_size = _end - _start;
+		size_type	new_len = old_size + n;
+		pointer		old_start = _start;
 
-		if (old_len < new_len)
+		if (old_cap < new_len)
 		{
 			try
 			{
-				pointer old_start = _start;
-				new_len = old_len * 2 > new_len ? old_len * 2 : new_len;
+				new_len = old_cap * 2 > new_len ? old_cap * 2 : new_len;
 				_start = _alloc.allocate(new_len); //maybe need to know if new_len > max_size
 				_end_capacity = _start + new_len;
 				my_copy(old_start, old_start + index, _start);
@@ -276,22 +273,25 @@ public:
 					first++;
 					index++;
 				}
-				my_copy(old_start + index - n, old_start + old_len, _start + index);
-				_alloc.deallocate(old_start, old_len);
-				_end = _start + old_len + n;
+				my_copy(old_start + index - n, old_start + old_size, _start + index);
+				_alloc.deallocate(old_start, old_cap);
+				_end = _start + old_size + n;
 			}
-			catch (std::exception e)
+			catch (...)
 			{
 				//надо будет исправить если что
-				this->~vector();
-				throw e;
+//				this->~vector();
+//				for (int i = index; i > 0; i--)
+//					_alloc.destroy(_start + i);
+//				_alloc.deallocate(_start, index);
+//				_alloc.deallocate(old_start, old_cap);
+				throw std::exception();
 			}
 		}
 		else
 		{
 			try
 			{
-				old_len = _end - _start;
 				my_copyR(_start + index, _end, _start + index + n);
 				while (first != last)
 				{
@@ -299,7 +299,7 @@ public:
 					first++;
 					index++;
 				}
-				_end = _start + old_len + n;
+				_end = _start + old_size + n;
 			}
 			catch (std::exception e)
 			{
@@ -324,16 +324,18 @@ public:
 	{
 		size_type	size = this->size();
 
+		if (n > this->max_size())
+			throw std::exception ();
 		if (n < size)
 		{
-			while (size != n)
+			while (size > n)
 			{
-				_alloc.destroy(_start + size);
+				_alloc.destroy(_end);
 				size--;
 				_end--;
 			}
 		}
-		if (n > size)
+		else
 			insert(end(), n - size, val);
 	};
 
@@ -390,38 +392,158 @@ public:
 	reference front() {return (*_start);};
 	const_reference front() const {return (*_start);};
 
-	reference back() {return (*_end);};
-	const_reference back() const {return (*_end);};
+	reference back() {return (*(_end - 1));};
+	const_reference back() const {return (*(_end - 1));};
 
 	template <class InputIterator>
-	void assign (InputIterator first, InputIterator last) {insert(begin(), first, last);};
-	void assign (size_type n, const value_type& val) { insert(begin(), n, val);};
+	typename ft::enable_if<!ft::is_integral<InputIterator>::stat, void>::type
+	assign (InputIterator first, InputIterator last)
+	{
+		this->clear();
+		size_type	old_len = _end_capacity - _start;
+		size_type	new_len = ft::distance(first, last);
 
-	void push_back (const value_type& val) { insert(end(), 1, val);};
+		if (old_len < new_len)
+		{
+			try
+			{
+				_alloc.deallocate(_start, old_len);
+				new_len = old_len * 2 > new_len ? old_len * 2 : new_len;
+				_start = _alloc.allocate(new_len); //maybe need to know if new_len > max_size
+				_end_capacity = _start + new_len;
+				for (int i = 0; first != last; i++, first++)
+					_alloc.construct(_start + i, *first);
+				_end = _start + new_len;
+			}
+			catch (std::exception e)
+			{
+				//надо будет исправить если что
+				this->~vector();
+				throw e;
+			}
+		}
+		else
+		{
+			try
+			{
+				for (int i = 0; first != last; i++, first++)
+					_alloc.construct(_start + i, *first);
+				_end = _start + new_len;
+			}
+			catch (std::exception e)
+			{
+				//надо будет исправить если что
+				this->~vector();
+				throw e;
+			}
+		}
+	};
+	void assign (size_type n, const value_type& val)
+	{
+		this->clear();
+		size_type	old_len = _end_capacity - _start;
+
+		if (old_len < n)
+		{
+			try
+			{
+				n = old_len * 2 > n ? old_len * 2 : n;
+				_alloc.deallocate(_start, old_len);
+				_start = _alloc.allocate(n); //maybe need to know if new_len > max_size
+				_end_capacity = _start + n;
+				for (size_type i = 0; i < n; i++)
+					_alloc.construct(_start + i, val);
+				_end = _start + n;
+			}
+			catch (std::exception e)
+			{
+				//надо будет исправить если что
+				this->~vector();
+				throw e;
+			}
+		}
+		else
+		{
+			try
+			{
+				for (size_type i = 0; i < n; i++)
+					_alloc.construct(_start + i, val);
+				_end = _start + n;
+			}
+			catch (std::exception e)
+			{
+				//надо будет исправить если что
+				this->~vector();
+				throw e;
+			}
+		}
+	};
+
+	void push_back (const value_type& val)
+	{
+		size_type	old_cap = _end_capacity - _start;
+		size_type	old_size = _end - _start;
+		size_type	new_len = old_size + 1;
+
+		if (old_cap < new_len)
+		{
+			try
+			{
+				pointer old_start = _start;
+				new_len = old_cap * 2 > new_len ? old_cap * 2 : new_len;
+				_start = _alloc.allocate(new_len); //maybe need to know if new_len > max_size
+				_end_capacity = _start + new_len;
+				my_copy(old_start, old_start + old_size, _start);
+				_alloc.construct(_start + old_size, val);
+				_alloc.deallocate(old_start, old_cap);
+				_end = _start + old_size + 1;
+			}
+			catch (std::exception e)
+			{
+				//надо будет исправить если что
+				this->~vector();
+				throw e;
+			}
+		}
+		else
+		{
+			try
+			{
+				_alloc.construct(_start + old_size, val);
+				_end = _start + old_size + 1;
+			}
+			catch (std::exception e)
+			{
+				//надо будет исправить если что
+				this->~vector();
+				throw e;
+			}
+		}
+	};
 	void pop_back() {resize(size() - 1);};
 
-	void for_erase(iterator position, size_type n) //нужно спрятать
+	pointer for_erase(iterator position, size_type n) //нужно спрятать
 	{
-		 pointer	point = _start + ft::distance(begin(), position);
+		int 		index = ft::distance(begin(), position);
+		pointer	point = _start + index;
+
+
 		 for (size_type i = 0; i < n; i++)
 			 _alloc.destroy(point + i);
-		my_copy(_start + n, _end, point);
+		my_copy(_start + index + n, _end, point);
 		_end -= n;
+		return (point);
 	}
 
 	iterator erase (iterator position)
 	{
-		iterator	out = position++;
-		for_erase(position, 1);
-		return (out);
+		return (iterator(for_erase(position, 1)));
 	};
 
 	iterator erase (iterator first, iterator last)
 	{
-		iterator	out = first++;
 		size_type	len = ft::distance(first, last);
-		for_erase(first, len);
-		return (out); // нужно поменять
+		return (for_erase(first, len));
 	};
 
 	void swap(vector& x)
@@ -436,11 +558,9 @@ public:
 
 	void clear()
 	{
-		for (size_type i = 0; i < size(); i++)
-		{
-			_alloc.construct(_start + i, *(_end + i));
+		size_type size = this->size();
+		for (size_type i = 0; i < size; i++)
 			_alloc.destroy(_end + i);
-		}
 		_end = _start;
 	}
 
@@ -489,5 +609,27 @@ public:
 		return (reverse_iterator(begin()));
 	}
 };
+	typedef	std::size_t		size_type;
+
+	template <typename T, typename Alloc>
+	bool operator== (const vector<T,Alloc>& lhs, const vector<T,Alloc>& rhs)	{return (lhs.size() != rhs.size() ? false : ft::equal(lhs.begin(), lhs.end(), rhs.begin())); }
+
+	template <typename T, typename Alloc>
+	bool operator!= (const vector<T,Alloc>& lhs, const vector<T,Alloc>& rhs)	{ return !(lhs == rhs); }
+
+	template <typename T, typename Alloc>
+	bool operator< (const vector<T,Alloc>& lhs, const vector<T,Alloc>& rhs)		{ return (ft::lexicographical_compare(lhs.begin(), lhs.end(), rhs.begin(), rhs.end())); }
+
+	template <typename T, typename Alloc>
+	bool operator<= (const vector<T,Alloc>& lhs, const vector<T,Alloc>& rhs)	{ return (!(rhs < lhs)); }
+
+	template <typename T, typename Alloc>
+	bool operator> (const vector<T,Alloc>& lhs, const vector<T,Alloc>& rhs)		{ return (rhs < lhs); }
+
+	template <typename T, typename Alloc>
+	bool operator>= (const vector<T,Alloc>& lhs, const vector<T,Alloc>& rhs)	{ return (!(lhs < rhs)); }
+
+	template <class T, class Alloc>
+	void swap (vector<T,Alloc>& x, vector<T,Alloc>& y)							{ x.swap(y); }
 }
 #endif

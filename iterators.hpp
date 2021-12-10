@@ -52,15 +52,17 @@ template <class Category, class T, class Distance = ptrdiff_t,
 
 	public:
 		typedef typename ft::iterator<random_access_iterator_tag, Type>::pointer pointer;
+		typedef typename ft::iterator<random_access_iterator_tag, Type>::difference_type difference_type;
+
 		vector_iterator() : _ptr(nullptr) {;}
 		vector_iterator(Type* rhs) : _ptr(rhs) {;}
 		vector_iterator(const vector_iterator &rhs) : _ptr(rhs._ptr) {;}
 
 	public:
-//		vector_iterator& operator=(vector_iterator &rhs) {this->_ptr = rhs._ptr; return *this;}
+		vector_iterator& operator=(vector_iterator &rhs) {this->_ptr = rhs._ptr; return *this;}
 		vector_iterator& operator=(const vector_iterator &rhs) {_ptr = rhs._ptr; return *this;}
-		vector_iterator& operator+=(const int& rhs) {_ptr += rhs; return *this;}
-		vector_iterator& operator-=(const int& rhs) {_ptr -= rhs; return *this;}
+		vector_iterator& operator+=(difference_type rhs) {_ptr += rhs; return (*this);}
+		vector_iterator& operator-=(difference_type rhs) {return (*this += -rhs);}
 		Type& operator*() {return *_ptr;}
 		Type* operator->() {return _ptr;}
 		Type& operator[](const int& rhs) {return _ptr[rhs];}
@@ -68,12 +70,16 @@ template <class Category, class T, class Distance = ptrdiff_t,
 	public:
 		vector_iterator& operator++() {++_ptr; return *this;}
 		vector_iterator& operator--() {--_ptr; return *this;}
-		vector_iterator& operator++(int) {++_ptr; return (*this);}
-		vector_iterator& operator--(int) {--_ptr; return (*this);}
-		vector_iterator operator+(const vector_iterator& rhs) {return vector_iterator(_ptr+rhs.ptr);}
+		vector_iterator operator++(int) {vector_iterator tmp = *this; ++_ptr; return (tmp);}
+		vector_iterator operator--(int) {vector_iterator tmp = *this; --_ptr; return (tmp);}
+		friend vector_iterator		operator+(int n, vector_iterator& p)
+		{
+			p._ptr = p._ptr + n;
+			return (p._ptr);
+		}
 		vector_iterator operator-(const vector_iterator& rhs) {return vector_iterator(_ptr-rhs.ptr);}
-		vector_iterator operator+(const int& rhs) {return vector_iterator(_ptr+rhs);}
-		vector_iterator operator-(const int& rhs) {return vector_iterator(_ptr-rhs);}
+		vector_iterator operator+(difference_type rhs) const {return vector_iterator(_ptr+rhs);}
+		vector_iterator operator-(difference_type rhs) const {return vector_iterator(_ptr-rhs);}
 		pointer base() { return  this->_ptr; };
 
 		//            friend inline Iterator operator+(const int& lhs, const Iterator& rhs) {return Iterator(lhs+_ptr);}
@@ -88,13 +94,17 @@ template <class Category, class T, class Distance = ptrdiff_t,
 		bool operator<=(const vector_iterator& rhs) {return _ptr <= rhs._ptr;}
 
 	protected:
-		Type* _ptr;
+		pointer _ptr;
 	};
 
 	template<class Type>
 	class const_vector_iterator : public ft::iterator<random_access_iterator_tag, const Type>
 	{
 	public:
+		typedef typename ft::iterator<random_access_iterator_tag, Type>::difference_type	difference_type;
+		typedef typename ft::iterator<random_access_iterator_tag, Type>::reference			reference;
+		typedef typename ft::iterator<random_access_iterator_tag, Type>::pointer			pointer;
+
 		const_vector_iterator() : _ptr(nullptr) {;}
 		const_vector_iterator(Type* rhs) : _ptr(rhs) {;}
 		template <class iter111>
@@ -104,10 +114,10 @@ template <class Category, class T, class Distance = ptrdiff_t,
 		const_vector_iterator(const const_vector_iterator &rhs) : _ptr(rhs._ptr) {;}
 
 	public:
-//		const_vector_iterator& operator=(const_vector_iterator &rhs) {this->_ptr = rhs._ptr; return *this;}
+		const_vector_iterator& operator=(const_vector_iterator &rhs) {this->_ptr = rhs._ptr; return *this;}
 		const_vector_iterator& operator=(const const_vector_iterator &rhs) {_ptr = rhs._ptr; return *this;}
-		const_vector_iterator& operator+=(const int& rhs) {_ptr += rhs; return *this;}
-		const_vector_iterator& operator-=(const int& rhs) {_ptr -= rhs; return *this;}
+		const_vector_iterator& operator+=(difference_type rhs) {_ptr += rhs; return *this;}
+		const_vector_iterator& operator-=(difference_type rhs) {return (*this += -rhs);}
 		Type& operator*() {return *_ptr;}
 		Type* operator->() {return _ptr;}
 		Type& operator[](const int& rhs) {return _ptr[rhs];}
@@ -115,12 +125,16 @@ template <class Category, class T, class Distance = ptrdiff_t,
 	public:
 		const_vector_iterator& operator++() {++_ptr; return *this;}
 		const_vector_iterator& operator--() {--_ptr; return *this;}
-		const_vector_iterator& operator++(int) {++_ptr; return (*this);}
-		const_vector_iterator& operator--(int) {--_ptr; return (*this);}
-		const_vector_iterator operator+(const const_vector_iterator& rhs) {return const_vector_iterator(_ptr+rhs.ptr);}
+		const_vector_iterator operator++(int) {const_vector_iterator tmp = *this; ++_ptr; return (tmp);}
+		const_vector_iterator operator--(int) {const_vector_iterator tmp = *this; --_ptr; return (tmp);}
+		friend const_vector_iterator		operator+(int n, const_vector_iterator& p)
+		{
+			p._ptr = p._ptr + n;
+			return (p._ptr);
+		}
 		const_vector_iterator operator-(const const_vector_iterator& rhs) {return const_vector_iterator(_ptr-rhs.ptr);}
-		const_vector_iterator operator+(const int& rhs) {return const_vector_iterator(_ptr+rhs);}
-		const_vector_iterator operator-(const int& rhs) {return const_vector_iterator(_ptr-rhs);}
+		const_vector_iterator operator+(difference_type rhs) const {return const_vector_iterator(_ptr+rhs);}
+		const_vector_iterator operator-(difference_type rhs) const {return const_vector_iterator(_ptr-rhs);}
 		//            friend inline Iterator operator+(const int& lhs, const Iterator& rhs) {return Iterator(lhs+_ptr);}
 		//            friend inline Iterator operator-(const int& lhs, const Iterator& rhs) {return Iterator(lhs-_ptr);}
 
@@ -133,7 +147,7 @@ template <class Category, class T, class Distance = ptrdiff_t,
 		bool operator<=(const const_vector_iterator& rhs) {return _ptr <= rhs._ptr;}
 
 	protected:
-		Type* _ptr;
+		pointer _ptr;
 	};
 
 

@@ -27,16 +27,16 @@ namespace ft
 
 								iterator_type base() const {return (_iter);}
 
-								reference operator*() const {return (*_iter);}
-								reverse_iterator operator+ (difference_type n) const {return (_iter + n);}
+								reference operator*() const {iterator_type tmp = _iter; return (*--tmp); }
+								reverse_iterator operator+ (difference_type n) const {return reverse_iterator(_iter - n);}
 								reverse_iterator& operator++() {--_iter; return (*this);}
 								reverse_iterator  operator++(int) {reverse_iterator tmp(*this); --_iter; return (tmp);}
 								reverse_iterator& operator+= (difference_type n) {_iter -= n; return (*this);}
-								reverse_iterator operator- (difference_type n) const {_iter += n; return (*this);}
+								reverse_iterator operator- (difference_type n) const {return (reverse_iterator(_iter + n));}
 								reverse_iterator& operator--() {++_iter; return (*this);}
 								reverse_iterator  operator--(int) {reverse_iterator tmp(*this); ++_iter; return (tmp);}
 								reverse_iterator& operator-= (difference_type n) {_iter += n; return (*this);}
-								pointer operator->() const {return (_iter._ptr);}
+								pointer operator->() const {return (&(operator*()));}
 								reference operator[] (difference_type n) const {retutrn (_iter[n]);}
 
 					protected:
