@@ -5,6 +5,7 @@
 #include "iterators.hpp"
 #include "reverse_iterator.hpp"
 #include "utils.hpp"
+#include <iostream>
 
 #include "enable_if.hpp"
 
@@ -56,18 +57,7 @@ public:
 		_end_capacity = _start + n;
 		while (n--)
 		{
-			try
-			{
-				_alloc.construct(_end, val);
-			} catch (...)
-			{
-				while (_start != _end)
-				{
-					_alloc.destroy(_start);
-					_start++;
-				}
-				throw std::exception(); // need to change to another exception;
-			}
+			_alloc.construct(_end, val);
 			_end++;
 		}
 	};
@@ -97,36 +87,23 @@ public:
 		size_type	new_len = x.size();
 		int			index = 0;
 
-		try
+		_start = _alloc.allocate(new_len); //maybe need to know if new_len > max_size
+		_end_capacity = _start + new_len;
+		while (first != last)
 		{
-			_start = _alloc.allocate(new_len); //maybe need to know if new_len > max_size
-			_end_capacity = _start + new_len;
-			while (first != last)
-			{
-				_alloc.construct(_start + index, *first);
-				first++;
-				index++;
-			}
-			_end = _start + index;
+			_alloc.construct(_start + index, *first);
+			first++;
+			index++;
 		}
-		catch (std::exception e)
-		{
-			//надо будет исправить если что
-			this->~vector();
-			throw e;
-		}
+		_end = _start + index;
 	}
 
 	~vector()
 	{
-		pointer	buff = _start;
+		size_type capacity = this->capacity();
 
-		while (buff != _end)
-		{
-			_alloc.destroy(buff);
-			buff++;
-		}
-		_alloc.deallocate(_start, this->size()); // maybe has leaks
+		clear();
+		_alloc.deallocate(_start, capacity); // maybe has leaks
 	};
 
 	vector& operator= (const vector& x) //maybe need to be rewrite
@@ -210,42 +187,40 @@ public:
 
 		if (old_cap < new_len)
 		{
-			try
-			{
-				pointer old_start = _start;
-				new_len = old_cap * 2 > new_len ? old_cap * 2 : new_len;
-				_start = _alloc.allocate(new_len); //maybe need to know if new_len > max_size
-				_end_capacity = _start + new_len;
-				my_copy(old_start, old_start + index, _start);
-				for (size_type i = 0; i < n; i++, index++)
-					_alloc.construct(_start + index, val);
-				my_copy(old_start + index - n, old_start + old_size, _start + index);
-				_alloc.deallocate(old_start, old_cap);
-				_end = _start + old_size + n;
-			}
-			catch (...)
-			{
-				//надо будет исправить если что
-				this->~vector();
-				throw std::exception();
-			}
+			pointer old_start = _start;
+			new_len = old_cap * 2 > new_len ? old_cap * 2 : new_len;
+			_start = _alloc.allocate(new_len); //maybe need to know if new_len > max_size
+			_end_capacity = _start + new_len;
+			my_copy(old_start, old_start + index, _start);
+			for (size_type i = 0; i < n; i++, index++)
+				_alloc.construct(_start + index, val);
+			my_copy(old_start + index - n, old_start + old_size, _start + index);
+			_alloc.deallocate(old_start, old_cap);
+			_end = _start + old_size + n;
 		}
 		else
 		{
-			try
-			{
-				my_copyR(_start + index, _end, _start + index + n);
-				for (size_type i = 0; i < n; i++, index++)
-					_alloc.construct(_start + index, val);
-				_end = _start + old_size + n;
-			}
-			catch (std::exception e)
-			{
-				//надо будет исправить если что
-				//this->~vector();
-				throw e;
-			}
+			my_copyR(_start + index, _end, _start + index + n);
+			for (size_type i = 0; i < n; i++, index++)
+				_alloc.construct(_start + index, val);
+			_end = _start + old_size + n;
 		}
+	}
+
+	template <class InputIterator>
+	bool _valid_iter(InputIterator first, InputIterator last, size_type range)
+	{
+		pointer		reserved_buffer = _alloc.allocate(range);
+		bool		result = true;
+		size_t		i = 0;
+
+		for (;first != last; ++first, ++i)
+		{
+			try{ reserved_buffer[i] = *first; }
+			catch (...) { result = false; break; }
+		}
+		_alloc.deallocate(reserved_buffer, range);
+		return result;
 	}
 
 	template <class InputIterator>
@@ -259,54 +234,40 @@ public:
 		size_type	new_len = old_size + n;
 		pointer		old_start = _start;
 
+		if (!_valid_iter(first, last, n))
+			throw std::exception();
+
 		if (old_cap < new_len)
 		{
-			try
+			pointer	buff = _alloc.allocate(n);
+
+			new_len = old_cap * 2 > new_len ? old_cap * 2 : new_len;
+			_start = _alloc.allocate(new_len); //maybe need to know if new_len > max_size
+			_end_capacity = _start + new_len;
+			my_copy(old_start, old_start + index, _start);
+			while (first != last)
 			{
-				new_len = old_cap * 2 > new_len ? old_cap * 2 : new_len;
-				_start = _alloc.allocate(new_len); //maybe need to know if new_len > max_size
-				_end_capacity = _start + new_len;
-				my_copy(old_start, old_start + index, _start);
-				while (first != last)
-				{
-					_alloc.construct(_start + index, *first);
-					first++;
-					index++;
-				}
-				my_copy(old_start + index - n, old_start + old_size, _start + index);
-				_alloc.deallocate(old_start, old_cap);
-				_end = _start + old_size + n;
+				_alloc.construct(_start + index, buff[index]);
+				first++;
+				index++;
 			}
-			catch (...)
-			{
-				//надо будет исправить если что
-//				this->~vector();
-//				for (int i = index; i > 0; i--)
-//					_alloc.destroy(_start + i);
-//				_alloc.deallocate(_start, index);
-//				_alloc.deallocate(old_start, old_cap);
-				throw std::exception();
-			}
+			my_copy(old_start + index - n, old_start + old_size, _start + index);
+			_alloc.deallocate(old_start, old_cap);
+			_end = _start + old_size + n;
+			for (size_type i = 0; i < index; i++)
+				_alloc.destroy(buff + i);
+			_alloc.deallocate(buff, index);
 		}
 		else
 		{
-			try
+			my_copyR(_start + index, _end, _start + index + n);
+			while (first != last)
 			{
-				my_copyR(_start + index, _end, _start + index + n);
-				while (first != last)
-				{
-					_alloc.construct(_start + index, *first);
-					first++;
-					index++;
-				}
-				_end = _start + old_size + n;
+				_alloc.construct(_start + index, *first);
+				first++;
+				index++;
 			}
-			catch (std::exception e)
-			{
-				//надо будет исправить если что
-				this->~vector();
-				throw e;
-			}
+			_end = _start + old_size + n;
 		}
 	}
 
@@ -355,39 +316,38 @@ public:
 
 		if (old_len < n)
 		{
-			try
+			pointer old_start = _start;
+			size_type new_len = old_len * 2 > n ? old_len * 2 : n;
+			_start = _alloc.allocate(new_len); //maybe need to know if new_len > max_size
+			_end = _start + old_len;
+			_end_capacity = _start + new_len;
+			for (size_type i = 0; i < old_len; i++)
 			{
-				pointer old_start = _start;
-				size_type new_len = old_len * 2 > n ? old_len * 2 : n;
-				_start = _alloc.allocate(new_len); //maybe need to know if new_len > max_size
-				_end = _start + old_len;
-				_end_capacity = _start + new_len;
-				for (size_type i = 0; i < old_len; i++)
-				{
-					_alloc.construct(_start + i, *(old_start + i));
-					_alloc.destroy(old_start + i);
-				}
-				_alloc.deallocate(old_start, old_len);
+				_alloc.construct(_start + i, *(old_start + i));
+				_alloc.destroy(old_start + i);
 			}
-			catch (std::exception e)
-			{
-				//надо будет исправить если что
-				this->~vector();
-				throw e;
-			}
+			_alloc.deallocate(old_start, old_len);
 		}
 	}
 
 	reference operator[](size_type n) {return (*(_start + n));};
 	const_reference operator[](size_type n) const {return (*(_start + n));};
 
-	reference at(size_type n)
+//	reference at(size_type n)
+//	{
+//		if (n >= 0 && n < this->size())
+//			return (*(_start + n));
+//		else
+//			throw std::exception();
+//	};
+
+	const_reference at (size_type n) const
 	{
 		if (n >= 0 && n < this->size())
 			return (*(_start + n));
 		else
-			throw std::exception(); //make new exception;
-	};
+			throw std::exception();
+	}
 
 	reference front() {return (*_start);};
 	const_reference front() const {return (*_start);};
@@ -405,37 +365,19 @@ public:
 
 		if (old_len < new_len)
 		{
-			try
-			{
-				_alloc.deallocate(_start, old_len);
-				new_len = old_len * 2 > new_len ? old_len * 2 : new_len;
-				_start = _alloc.allocate(new_len); //maybe need to know if new_len > max_size
-				_end_capacity = _start + new_len;
-				for (int i = 0; first != last; i++, first++)
-					_alloc.construct(_start + i, *first);
-				_end = _start + new_len;
-			}
-			catch (std::exception e)
-			{
-				//надо будет исправить если что
-				this->~vector();
-				throw e;
-			}
+			_alloc.deallocate(_start, old_len);
+			new_len = old_len * 2 > new_len ? old_len * 2 : new_len;
+			_start = _alloc.allocate(new_len); //maybe need to know if new_len > max_size
+			_end_capacity = _start + new_len;
+			for (int i = 0; first != last; i++, first++)
+				_alloc.construct(_start + i, *first);
+			_end = _start + new_len;
 		}
 		else
 		{
-			try
-			{
-				for (int i = 0; first != last; i++, first++)
-					_alloc.construct(_start + i, *first);
-				_end = _start + new_len;
-			}
-			catch (std::exception e)
-			{
-				//надо будет исправить если что
-				this->~vector();
-				throw e;
-			}
+			for (int i = 0; first != last; i++, first++)
+				_alloc.construct(_start + i, *first);
+			_end = _start + new_len;
 		}
 	};
 	void assign (size_type n, const value_type& val)
@@ -445,37 +387,19 @@ public:
 
 		if (old_len < n)
 		{
-			try
-			{
-				n = old_len * 2 > n ? old_len * 2 : n;
-				_alloc.deallocate(_start, old_len);
-				_start = _alloc.allocate(n); //maybe need to know if new_len > max_size
-				_end_capacity = _start + n;
-				for (size_type i = 0; i < n; i++)
-					_alloc.construct(_start + i, val);
-				_end = _start + n;
-			}
-			catch (std::exception e)
-			{
-				//надо будет исправить если что
-				this->~vector();
-				throw e;
-			}
+			n = old_len * 2 > n ? old_len * 2 : n;
+			_alloc.deallocate(_start, old_len);
+			_start = _alloc.allocate(n); //maybe need to know if new_len > max_size
+			_end_capacity = _start + n;
+			for (size_type i = 0; i < n; i++)
+				_alloc.construct(_start + i, val);
+			_end = _start + n;
 		}
 		else
 		{
-			try
-			{
-				for (size_type i = 0; i < n; i++)
-					_alloc.construct(_start + i, val);
-				_end = _start + n;
-			}
-			catch (std::exception e)
-			{
-				//надо будет исправить если что
-				this->~vector();
-				throw e;
-			}
+			for (size_type i = 0; i < n; i++)
+				_alloc.construct(_start + i, val);
+			_end = _start + n;
 		}
 	};
 
@@ -487,37 +411,19 @@ public:
 
 		if (old_cap < new_len)
 		{
-			try
-			{
-				pointer old_start = _start;
-				new_len = old_cap * 2 > new_len ? old_cap * 2 : new_len;
-				_start = _alloc.allocate(new_len); //maybe need to know if new_len > max_size
-				_end_capacity = _start + new_len;
-				my_copy(old_start, old_start + old_size, _start);
-				_alloc.construct(_start + old_size, val);
-				_alloc.deallocate(old_start, old_cap);
-				_end = _start + old_size + 1;
-			}
-			catch (std::exception e)
-			{
-				//надо будет исправить если что
-				this->~vector();
-				throw e;
-			}
+			pointer old_start = _start;
+			new_len = old_cap * 2 > new_len ? old_cap * 2 : new_len;
+			_start = _alloc.allocate(new_len); //maybe need to know if new_len > max_size
+			_end_capacity = _start + new_len;
+			my_copy(old_start, old_start + old_size, _start);
+			_alloc.construct(_start + old_size, val);
+			_alloc.deallocate(old_start, old_cap);
+			_end = _start + old_size + 1;
 		}
 		else
 		{
-			try
-			{
-				_alloc.construct(_start + old_size, val);
-				_end = _start + old_size + 1;
-			}
-			catch (std::exception e)
-			{
-				//надо будет исправить если что
-				this->~vector();
-				throw e;
-			}
+			_alloc.construct(_start + old_size, val);
+			_end = _start + old_size + 1;
 		}
 	};
 	void pop_back() {resize(size() - 1);};
@@ -546,7 +452,7 @@ public:
 		return (for_erase(first, len));
 	};
 
-	void swap(vector& x)
+	void swap(const vector& x)
 	{
 		if (this != &x)
 		{
