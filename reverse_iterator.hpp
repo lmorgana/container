@@ -37,7 +37,7 @@ namespace ft
 								reverse_iterator  operator--(int) {reverse_iterator tmp(*this); ++_iter; return (tmp);}
 								reverse_iterator& operator-= (difference_type n) {_iter += n; return (*this);}
 								pointer operator->() const {return (&(operator*()));}
-								reference operator[] (difference_type n) const {retutrn (_iter[n]);}
+								reference operator[] (difference_type n) const {return (*(*this + n));}
 
 					protected:
 						iterator_type	_iter;
@@ -69,7 +69,7 @@ namespace ft
 
 	template <class Iter>
 			reverse_iterator<Iter> operator+ ( typename reverse_iterator<Iter>::difference_type n,
-					const reverse_iterator<Iter>& rev_it) {(reverse_iterator<Iter>(rev_it.base() - n));}
+					const reverse_iterator<Iter>& rev_it) {return (reverse_iterator<Iter>(rev_it.base() - n));}
 
 }
 #endif

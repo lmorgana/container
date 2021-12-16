@@ -29,5 +29,14 @@ namespace ft
 			}
 			return (first2!=last2);
 		}
+
+		template<class T>
+		void swap(T& x, T& y)
+		{
+			T buff(x);
+
+			x = y;
+			y = buff;
+		}
 }
 #endif
