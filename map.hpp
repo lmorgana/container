@@ -44,7 +44,7 @@ namespace ft
 					  const allocator_type& alloc = allocator_type())
 					  : _alloc(alloc), _comp(comp)
 		{
-			_tree = _alloc_rebind_tree.allocate(1);
+			_tree = _alloc_rebind_tree.allocate(1);//sizeof(node<T>));
 			_alloc_rebind_tree.construct(_tree);
 		}
 
@@ -73,8 +73,8 @@ namespace ft
 
 		~map()
 		{
-			_alloc_rebind_tree.destroy(_tree);
-			_alloc_rebind_tree.deallocate(_tree, 1);
+//			_alloc_rebind_tree.destroy(_tree);
+//			_alloc_rebind_tree.deallocate(_tree, 1);
 		}
 
 		//need insert;
@@ -101,18 +101,63 @@ namespace ft
 		reverse_iterator rend() { return reverse_iterator(begin()); }
 		const_reverse_iterator rend() const { return const_reverse_iterator(begin()); }
 
+		bool empty() const { return (begin() == end()); }
+		size_type size() const { return (_tree->_size); }
+		size_type max_size() const { return (_alloc_rebind_node.max_size()); }
+
+		// maybe need to modify
+		mapped_type& operator[] (const key_type& k) { return insert(ft::make_pair(k,mapped_type().first)).second; }
+
+
 		//*****************
 		//**other methods**
 		//*****************
 
-		bool empty() const
+		ft::pair<iterator,bool> insert (const value_type& val)
 		{
-			return (begin() != end());
+			return insert_node(_tree->_root, val);
 		}
 
-		size_type size() const
+		ft::pair<iterator, bool> insert_node(node<value_type> *elem, const value_type &value)
 		{
+			node<value_type> *curr, *parent, *x;
 
+			curr = elem;
+			parent  = 0;
+			while (!curr->is_nil)
+			{
+				if (value.first == curr->key->first)
+					return (ft::make_pair(curr, false));
+				parent = curr;
+				if (_comp(value.first, curr->key->first))
+					curr = curr->left;
+				else
+					curr = curr->right;
+			}
+			x = _alloc_rebind_node.allocate(1);
+			_alloc_rebind_node.construct(x);
+			x->key = value;
+			x->parent = parent;
+			x->left = &_tree->_nil;
+			x->right = &_tree->_nil;
+			x->is_nil = false;
+			x->color = BLACK;
+			if (parent)
+			{
+				if (_comp(value.first, parent->key->first))
+					parent->left = x;
+				else
+					parent->right = x;
+			}
+			else
+				_tree->_root = x;
+			_tree->rb_insert_fixup(x);
+			if (x == _tree->max())
+				_tree->_nil.parent = x;
+//			else if (x == _tree->min())
+//				_tree->_nil->begin;
+			_tree->_size++;
+			return (ft::make_pair(x, true));
 		}
 	};
 }

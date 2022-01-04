@@ -1,7 +1,7 @@
 NAME			= container
 SRCS			= main.cpp
 OBJS			= $(patsubst %.cpp, %.o, $(SRCS))
-HEADERS			= tree.hpp
+HEADERS			= tree.hpp map.hpp tree_iterator.hpp
 CC				= clang++
 RM				= rm -f
 FLAGS			= -Wall -Wextra -Werror -std=c++98

@@ -27,16 +27,17 @@ namespace ft
 	template <class T, class Compare = std::less<T> >
 	class Tree
 	{
-	private:
+	public:
+		size_t	_size;
 		node<T>	_nil;
 		node<T> *_root;
-		size_t	_size;
 
-	public:
 
 		Tree()
 		{
 			_nil.is_nil = true;
+			_nil.left = &_nil;
+			_nil.right = &_nil;
 			_nil.color = BLACK;
 			_size = 0;
 			_root = &_nil;
@@ -47,6 +48,8 @@ namespace ft
 			(void) other;
 			_nil->is_nil = true;
 			_nil->color = BLACK;
+			_nil.left = &_nil;
+			_nil.right = &_nil;
 			_size = 0;
 			_root = _nil;
 		}
@@ -80,10 +83,10 @@ namespace ft
 			node<T> *y = x->right;
 
 			x->right = y->left;
-			if (y->left != _nil)
+			if (!y->left->is_nil)
 				y->left->parent = x;
 			y->parent = x->parent;
-			if (x->parent == _nil)
+			if (x->parent->is_nil)
 				_root = y;
 			else if (x == x->parent->left)
 				x->parent->left = y;
@@ -99,10 +102,10 @@ namespace ft
 			node<T> *x = y->left;
 
 			y->left = x->right;
-			if (x->right != _nil)
+			if (!x->right->is_nil)
 				x->right->parent = y;
 			x->parent = y->parent;
-			if (y->parent == _nil)
+			if (y->parent->is_nil)
 				_root = x;
 			else if (y->parent == y->parent->left)
 				y->parent->left = x;
