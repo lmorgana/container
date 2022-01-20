@@ -1,30 +1,31 @@
 #ifndef TREE_ITERATOR_HPP
 #define TREE_ITERATOR_HPP
 
-#include "tree.hpp"
+#include "map.hpp"
 #include "enable_if.hpp"
 #include "iterators.hpp"
 
+
 namespace ft
 {
-	template <class T>
+	template<class T>
 	struct node;
 
-	template <class Type>
+	template<class Type>
 	class treeIterator
 	{
-		typedef node<typename ft::remove_const<Type>::type>	*node_ptr;
-		node_ptr	_node;
+		typedef node<typename ft::remove_const<Type>::type> *node_ptr;
+		node_ptr _node;
 
 	private:
-		node_ptr *minimum(node_ptr *x)
+		node_ptr min(node_ptr x)
 		{
-			while (!x->left->is_nil)
+			while (x->left->is_nil == false)
 				x = x->left;
 			return (x);
 		}
 
-		node_ptr *maximum(node_ptr *x)
+		node_ptr max(node_ptr x)
 		{
 			while (!x->right->is_nil)
 				x = x->right;
@@ -52,14 +53,13 @@ namespace ft
 			_node = other.base();
 			return (*this);
 		}
-
 		node_ptr base() const
 		{
 			return (_node);
 		}
 		reference operator*() const
 		{
-			return *_node->value;
+			return *_node->key;
 		}
 		pointer operator->() const
 		{
@@ -68,11 +68,11 @@ namespace ft
 		treeIterator& operator++()
 		{
 			if (_node->right && _node->right->is_nil == false)
-				_node = minimum(_node->right);
+				_node = min(_node->right);
 			else
 			{
 				node_ptr y = _node->parent;
-				while (y && y->nil == false && _node == y->right)
+				while (y && y->is_nil == false && _node == y->right)
 				{
 					_node = y;
 					y = y->parent;
@@ -93,11 +93,11 @@ namespace ft
 		treeIterator& operator--()
 		{
 			if (_node->left && _node->left->is_nil == false)
-				_node = maximum(_node->left);
+				_node = max(_node->left);
 			else
 			{
 				node_ptr y = _node->parent;
-				while (y && y->nil == false && _node == y->left)
+				while (y && y->is_nil == false && _node == y->left)
 				{
 					_node = y;
 					y = y->parent;
@@ -106,6 +106,7 @@ namespace ft
 			}
 			return (*this);
 		}
+
 		treeIterator operator--(int)
 		{
 			treeIterator tmp(*this);
@@ -114,6 +115,7 @@ namespace ft
 			return (tmp);
 		}
 	};
+
 	template <class A, class B>
 	bool operator==(const treeIterator<A>& lhs,
 					const treeIterator<B>& rhs)

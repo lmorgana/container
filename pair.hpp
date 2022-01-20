@@ -15,7 +15,7 @@ namespace ft
 		pair() : first(), second() {};
 		pair(const T& x, const U& y) : first(x), second(y) {};
 		template<class V, class W>
-				pair(const pair<V, W>& pr) : first(pr.first), second(pr.second){};
+		pair(const pair<V, W>& pr) : first(pr.first), second(pr.second){};
 		pair& operator=(pair const& pr)
 		{
 			if (*this != pr)
@@ -27,11 +27,11 @@ namespace ft
 		}
 	};
 	template <class T1, class T2>
-	bool operator== (const pair<T1,T2>& x, const pair<T1,T2>& y)	{ return (x.first==x.first && y.second==y.second); }
+	bool operator== (const pair<T1,T2>& x, const pair<T1,T2>& y)	{ return (x.first==y.first && x.second==y.second); }
 	template <class T1, class T2>
 	bool operator!= (const pair<T1,T2>& x, const pair<T1,T2>& y)	{ return (!(x==y)); }
 	template <class T1, class T2>
-	bool operator< (const pair<T1,T2>& x, const pair<T1,T2>& y)		{ return (x.first<y.first || (!(x.first<y.first) && x.second<y.second)); }
+	bool operator< (const pair<T1,T2>& x, const pair<T1,T2>& y)		{ return (x.first < y.first || (!(y.first < x.first) && x.second < y.second)); }
 	template <class T1, class T2>
 	bool operator<= (const pair<T1,T2>& x, const pair<T1,T2>& y)	{ return (!(y<x)); }
 	template <class T1, class T2>
