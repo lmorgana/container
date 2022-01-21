@@ -54,8 +54,8 @@ namespace ft
 		value_compare		_vcomp;
 		alloc_rebind_node	_alloc_rebind_node;
 		node_ptr			_root;
-		node<value_type>	_end;
-		node<value_type>	_nil;
+		node_ptr			_end;
+		node_ptr			_nil;
 
 	public:
 		explicit map (const key_compare& comp = key_compare(),
@@ -91,6 +91,10 @@ namespace ft
 			if (this != &other)
 			{
 				clear_tree(_root);
+				_alloc_rebind_node.destroy(_nil);
+				_alloc_rebind_node.deallocate(_nil, 1);
+				_alloc_rebind_node.destroy(_end);
+				_alloc_rebind_node.deallocate(_end, 1);
 				init_tree();
 
 				const_iterator first = other.begin();
@@ -104,6 +108,10 @@ namespace ft
 		~map()
 		{
 			clear_tree(_root);
+			_alloc_rebind_node.destroy(_nil);
+			_alloc_rebind_node.deallocate(_nil, 1);
+			_alloc_rebind_node.destroy(_end);
+			_alloc_rebind_node.deallocate(_end, 1);
 		}
 
 
@@ -123,7 +131,6 @@ namespace ft
 		size_type size() const { return tree_size(_root); }
 		size_type max_size() const { return (_alloc_rebind_node.max_size()); }
 
-		// maybe need to modify
 		mapped_type& operator[] (const key_type& k) { return (*((this->insert(ft::make_pair(k, mapped_type()))).first)).second; }
 
 
@@ -206,7 +213,7 @@ namespace ft
 		void clear()
 		{
 			clear_tree(_root);
-			_root = &_nil;
+			_root = _nil;
 			fix_end();
 		}
 
@@ -214,7 +221,7 @@ namespace ft
 		{
 			if (this != &x)
 			{
-				std::swap(*this, x);
+				ft::swap(*this, x);
 			}
 		}
 
@@ -226,7 +233,7 @@ namespace ft
 		iterator lower_bound (const key_type& k)
 		{
 			node_ptr node = _root;
-			node_ptr par = &_end;
+			node_ptr par = _end;
 
 			while (!is_nil(node))
 			{
@@ -245,7 +252,7 @@ namespace ft
 		const_iterator lower_bound (const key_type& k) const
 		{
 			node_ptr node = _root;
-			node_ptr par = &_end;
+			node_ptr par = _end;
 
 			while (!is_nil(node))
 			{
@@ -264,7 +271,7 @@ namespace ft
 		iterator upper_bound (const key_type& k)
 		{
 			node_ptr node = _root;
-			node_ptr par = &_end;
+			node_ptr par = _end;
 
 			while (!is_nil(node))
 			{
@@ -282,7 +289,7 @@ namespace ft
 		const_iterator upper_bound (const key_type& k) const
 		{
 			node_ptr node = _root;
-			node_ptr par = &_end;
+			node_ptr par = _end;
 
 			while (!is_nil(node))
 			{
@@ -357,24 +364,28 @@ namespace ft
 
 		void init_tree()
 		{
-			_nil.is_nil = true;
-			_nil.left = &_nil;
-			_nil.right = &_nil;
-			_nil.color = BLACK;
-			_nil.parent = &_nil;
-			_end.left = &_nil;
-			_end.is_nil = false;
-			_end.right = &_nil;
-			_end.parent = &_nil;
-			_end.color = BLACK;
-			_root = &_nil;
+			_end = _alloc_rebind_node.allocate(1);
+			_alloc_rebind_node.construct(_end);
+
+			_nil = _alloc_rebind_node.allocate(1);
+			_alloc_rebind_node.construct(_nil);
+
+			_nil->is_nil = true;
+			_nil->left = _nil;
+			_nil->right = _nil;
+			_nil->color = BLACK;
+			_nil->parent = _nil;
+			_end->left = _nil;
+			_end->is_nil = false;
+			_end->right = _nil;
+			_end->parent = _nil;
+			_end->color = BLACK;
+			_root = _nil;
 		}
 
-		//check if node is _nil or _end because it's node work nodes
 		bool is_nil(node_ptr node) const
 		{
-//			return (node->is_nil);
-			return (node == &_nil || node == &_end);
+			return (node == _nil || node == _end);
 		}
 
 		node_ptr min(node_ptr x) const
@@ -408,9 +419,9 @@ namespace ft
 			node->key = _alloc.allocate(1);
 			_alloc.construct(node->key, value);
 
-			node->left = &_nil;
-			node->right = &_nil;
-			node->parent = &_nil;
+			node->left = _nil;
+			node->right = _nil;
+			node->parent = _nil;
 			node->is_nil = false;
 			node->color = RED;
 			return (node);
@@ -480,7 +491,7 @@ namespace ft
 						right_rotate(z->parent->parent);
 					}
 				}
-				else  // возможно нужно исправить
+				else
 				{
 					y = z->parent->parent->left;
 					if (y->color == RED)
@@ -512,10 +523,10 @@ namespace ft
 			node_ptr max_node;
 
 			max_node = max(_root);
-			max_node->right = &_end;
-			_end.parent = max_node;
-			_nil.right = max_node;
-			_nil.left = min(_root);
+			max_node->right = _end;
+			_end->parent = max_node;
+			_nil->right = max_node;
+			_nil->left = min(_root);
 		}
 
 		ft::pair<iterator, bool> insert_node(node_ptr elem, const value_type &value)
@@ -523,7 +534,7 @@ namespace ft
 			node_ptr curr, parent, x;
 
 			curr = elem;
-			parent  = &_nil;
+			parent  = _nil;
 			while (!is_nil(curr))
 			{
 				if (value.first == curr->key->first)
@@ -548,7 +559,7 @@ namespace ft
 			rb_insert_fixup(x);
 
 			if (x == max(_root))
-				_nil.parent = x;
+				_nil->parent = x;
 			fix_end();
 			return (ft::make_pair(x, true));
 		}
