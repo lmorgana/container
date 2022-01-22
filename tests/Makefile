@@ -1,7 +1,7 @@
-NAME			= container
-SRCS			= main.cpp
+NAME			= test
+SRCS			= test_utils.cpp tests_vector/vec.cpp stack/stack_test.cpp tests_map/map_test.cpp
 OBJS			= $(patsubst %.cpp, %.o, $(SRCS))
-HEADERS			= tree.hpp map.hpp tree_iterator.hpp
+HEADERS			= test_utils.h
 CC				= clang++
 RM				= rm -f
 FLAGS			= -Wall -Wextra -Werror -std=c++98

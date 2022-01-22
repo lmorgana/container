@@ -97,7 +97,6 @@ public:
 		}
 	};
 
-	//need to make InputIterator
 	template<class InputIterator>
 	vector(InputIterator first, InputIterator last,
 			const allocator_type& alloc = allocator_type(),
