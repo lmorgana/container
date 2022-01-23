@@ -1,5 +1,5 @@
 
-#include "../test_utils.h"
+#include "test_utils.h"
 
 template <class T>
 std::vector<int> copy_constructor(std::vector<T> vector)
@@ -991,6 +991,4 @@ void start_vec()
 	test<int>(swap, swap, "swap");
 	test<int>(clear, clear, "clear");
 	test<int>(operators, operators, "operators");
-
 }
-

@@ -1,5 +1,5 @@
 NAME			= test
-SRCS			= test_utils.cpp tests_vector/vec.cpp stack/stack_test.cpp tests_map/map_test.cpp
+SRCS			= test_utils.cpp vector_test.cpp stack_test.cpp map_test.cpp set_test.cpp
 OBJS			= $(patsubst %.cpp, %.o, $(SRCS))
 HEADERS			= test_utils.h
 CC				= clang++

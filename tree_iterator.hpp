@@ -1,7 +1,6 @@
 #ifndef TREE_ITERATOR_HPP
 #define TREE_ITERATOR_HPP
 
-#include "map.hpp"
 #include "enable_if.hpp"
 #include "iterators.hpp"
 

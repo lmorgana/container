@@ -6,9 +6,6 @@
 
 const std::string GREEN_COLOR = "\x1B[1;32m";
 const std::string RED_COLOR = "\x1B[1;31m";
-const std::string YELLOW_COLOR = "\x1B[1;33m";
-const std::string WHITE_COLOR = "\x1B[1;39m";
-const std::string RESET_COLOR = "\033[0m";
 const std::string DEFAULT_COLOR = "\033[0m";
 
 void ft_result(std::string name_test, std::vector<int> v1, std::vector<int> v2, unsigned long t1, unsigned long t2)
@@ -21,8 +18,9 @@ void ft_result(std::string name_test, std::vector<int> v1, std::vector<int> v2, 
 
 int main(void)
 {
-//	start_vec();
-//	start_stack();
+	start_vec();
+	start_stack();
 	start_map();
+	start_set();
 }
 
